@@ -21,7 +21,7 @@ vector<vector<long long int>> Induced_subgraph;//誘導部分グラフ
 
 //定数終了
 //誘導部分グラフを計算する関数
-void making_induced_subgraph(long long int induced_subgraph_n) {
+vector<bool> making_induced_subgraph(long long int induced_subgraph_n) {
 	vector<bool> Exist;//誘導部分グラフを計算するのに用いる配列,頂点iが誘導部分グラフの頂点集合に属していたらexist[i]=true,属していなければexist[i]=falseである.
 	Exist.resize(n);
 	cout << "Existの大きさは" << Exist.size() << endl;
@@ -44,20 +44,15 @@ void making_induced_subgraph(long long int induced_subgraph_n) {
 			};//
 		}
 	}
+	return Exist;
 }
 
 //最終的に感染する頂点を求める関数(bitを使わない実装)
-vector<bool> who_is_influenced_not_bit() {
+vector<bool> who_is_influenced_not_bit(vector<bool> Exist) {
 	vector<bool> Influenced;//頂点iが感染していたらinfluenced[i]=true,そうでなければinfluenced[i]=falseである
 	Influenced.resize(n);
-	vector<bool> Exist;//誘導部分グラフの頂点集合,頂点iが誘導部分グラフの頂点集合に属していたらExist[i]=true,ぞこうしていなければExist[i]=falseである
-	Exist.resize(n);
 	for (long long int i = 0; i < n; i++) {
 		Influenced[i] = false;
-		Exist[i] = false;
-	}
-	for (long long int i = 0; i < n; i++) {
-		if (Induced_subgraph[i].size() > 0)Exist[i] = true;
 	}
 	//1回目の拡散過程の実装開始
 	for (long long int i = 0; i < n; i++) {
@@ -83,6 +78,25 @@ vector<bool> who_is_influenced_not_bit() {
 	} while (changed);
 	//t回目の拡散過程の実装終了
 	return Influenced;
+}
+
+//|Y(X)|を求める関数
+vector<bool> calculate_YX(vector<bool> Influenced,vector<bool> Exist) {
+	vector<bool> YX;//頂点iがY(X)に属するならYX[i]=1,属さないならYX[i]=0
+	YX.resize(n);
+	for (long long int i = 0; i < n; i++) {
+		YX[i] = false;
+	}
+	for (long long int i = 0; i < n; i++) {
+		if (!Exist[i]) {
+			long long int count = 0;
+			for (long long int j = 0; j < G[i].size(); j++) {
+				if (Influenced[G[i][j]])count++;
+			}
+			if (count >= T[i])YX[i] = true;
+		}
+	}
+	return YX;
 }
 //メイン関数
 int main() {
@@ -170,14 +184,23 @@ int main() {
 
 	cout << "誘導部分グラフの頂点数を入力してください:" << endl;
 	cin >> numbers_of_induced_subgraph_vertices;
-	making_induced_subgraph(numbers_of_induced_subgraph_vertices);//部分誘導グラフの作成
-	vector<bool> A = who_is_influenced_not_bit();
+	vector<bool> Exist=making_induced_subgraph(numbers_of_induced_subgraph_vertices);//部分誘導グラフの作成
+	vector<bool> A = who_is_influenced_not_bit(Exist);
 	for (int i = 0; i < n; i++) {
 		if (A[i]) {
 			cout << "頂点" << i+1 << "は感染しています." << endl;
 		}
 		else {
 			cout << "頂点" << i+1 << "は感染していません." << endl;
+		}
+	}
+	vector <bool> YX = calculate_YX(A,Exist);
+	for (int i = 0; i < n; i++) {
+		if (YX[i]) {
+			cout << "頂点" << i + 1 << "に免疫を付ければいい." << endl;
+		}
+		else {
+			cout << "頂点" << i + 1 << "に免疫を付けなくていい" << endl;
 		}
 	}
 	clock_t end = clock();     // 時間測定終了
